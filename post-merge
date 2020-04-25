@@ -1,0 +1,9 @@
+wd=$(pwd)
+gitd=$(git rev-parse --show-toplevel)
+
+cd $gitd
+
+# Execute a git submodule update
+git submodule update --recursive
+
+cd $wd
