@@ -55,6 +55,15 @@ if [ $? -ne 0 ]; then
 fi
 
 #-----------------------------------
+# Build the application 
+#-----------------------------------
+go build $gitd/...
+if [ $? -ne 0 ]; then
+	echo "build failed"
+       	exit 1 
+fi
+
+#-----------------------------------
 # Execute the linters 
 #-----------------------------------
 echo "executing golint"
@@ -104,7 +113,7 @@ fi
 #-----------------------------------
 # Evaluate the go.mod file 
 #-----------------------------------
-ls $wd | grep go.mod>/dev/null 2>&1
+ls $gitd | grep go.mod>/dev/null 2>&1
 if [ $? == 0 ]; then
 	cd $gitd
 
