@@ -76,10 +76,13 @@ if [ $? -ne 0 ]; then
 	go get -u honnef.co/go/tools/cmd/staticcheck 
 fi
 
+# Move to repo root directory
+cd $gitd
+
 #-----------------------------------
 # Build the application 
 #-----------------------------------
-go build $gitd/...
+go build ./...
 if [ $? -ne 0 ]; then
 	echo "build failed"
        	exit 1 
@@ -97,37 +100,37 @@ for file in ${gofiles}; do
 done
 
 echo "executing go vet"
-go vet -race $gitd/...
+go vet -race ./...
 if [ $? -ne 0 ]; then
         has_error=1
 fi
 
 echo "executing misspell"
-misspell -error $gitd 
+misspell -error . 
 if [ $? -ne 0 ]; then
     has_error=1
 fi
 
 echo "executing ineffassign"
-ineffassign $gitd
+ineffassign . 
 if [ $? -ne 0 ]; then
     has_error=1
 fi
 
 echo "executing errcheck"
-errcheck $gitd/...
+errcheck ./...
 if [ $? -ne 0 ]; then
     has_error=1
 fi
 
 echo "executing gosec"
-gosec -quiet $gitd/...
+gosec -quiet ./...
 if [ $? -ne 0 ]; then
     has_error=1
 fi
 
 echo "executing staticcheck"
-staticcheck -tests=0 $gitd/...
+staticcheck -tests=0 ./...
 if [ $? -ne 0 ]; then
     has_error=1
 fi
@@ -135,10 +138,12 @@ fi
 #-----------------------------------
 # Execute the unit tests 
 #-----------------------------------
-go test -race -cover $gitd/...
+go test -race -cover ./...
 if [ $? -ne 0 ]; then
     has_error=1
 fi
+
+cd $wd
 
 if [ ${has_error} -ne 0 ]; then
     echo "One or more linter errors. Fix them and try again."
