@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #-----------------------------------
 # Pre-Commit Hook
 #-----------------------------------
@@ -13,8 +15,12 @@ find . -type f -name go.mod | while read fname; do
 	DIR=$(dirname $fname)
 	cd $DIR
 	go mod tidy
-	git add go.mod
-	git add go.sum
+	git add go.mod	
+	
+	# check for the existence of a go.sum file
+	if [ -f "go.sum" ]; then
+		git add go.sum
+	fi
 
 	# Determine if there is a replace directive in the go.mod file
 	rep=$(grep -n replace go.mod)
@@ -42,97 +48,21 @@ for fn in $unformatted; do
     	git add $PWD/$fn
 done
 
-#-----------------------------------
-# pull a copy Linters that will be used against the go files if they
-# are not already pulled
-#-----------------------------------
-which golint>/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	go get -u github.com/x/lint/golint
-fi
-
-which misspell>/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	go get -u github.com/client9/misspell/cmd/misspell
-fi
-
-which ineffassign>/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	go get -u github.com/gordonklaus/ineffassign
-fi
-
-which errcheck>/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	go get -u github.com/kisielk/errcheck
-fi
-
-which gosec>/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	go get -u github.com/securego/gosec/cmd/gosec
-fi
-
-which staticcheck>/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	go get -u honnef.co/go/tools/cmd/staticcheck 
-fi
-
 # Move to repo root directory
 cd $gitd
 
 #-----------------------------------
-# Build the application 
+# Execute the linters
 #-----------------------------------
-go build ./...
-if [ $? -ne 0 ]; then
-	echo "build failed"
-       	exit 1 
-fi
 
-#-----------------------------------
-# Execute the linters 
-#-----------------------------------
-echo "executing golint"
-for file in ${gofiles}; do
-    golint -set_exit_status ${file}
-    if [ $? -ne 0 ]; then
+# Determine if golangci-lint is installed and execute
+# it against the directory
+which golangci-lint>/dev/null 2>&1
+if [ $? -e 0 ]; then
+	golangci-lint run
+	if [ $? -ne 0 ]; then
         has_error=1
     fi
-done
-
-echo "executing go vet"
-go vet -race ./...
-if [ $? -ne 0 ]; then
-        has_error=1
-fi
-
-echo "executing misspell"
-misspell -error . 
-if [ $? -ne 0 ]; then
-    has_error=1
-fi
-
-echo "executing ineffassign"
-ineffassign . 
-if [ $? -ne 0 ]; then
-    has_error=1
-fi
-
-echo "executing errcheck"
-errcheck ./...
-if [ $? -ne 0 ]; then
-    has_error=1
-fi
-
-echo "executing gosec"
-gosec -quiet ./...
-if [ $? -ne 0 ]; then
-    has_error=1
-fi
-
-echo "executing staticcheck"
-staticcheck -tests=0 ./...
-if [ $? -ne 0 ]; then
-    has_error=1
 fi
 
 #-----------------------------------
