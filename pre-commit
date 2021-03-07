@@ -58,7 +58,7 @@ cd $gitd
 # Determine if golangci-lint is installed and execute
 # it against the directory
 which golangci-lint>/dev/null 2>&1
-if [ $? -e 0 ]; then
+if [ $? == 0 ]; then
 	golangci-lint run
 	if [ $? -ne 0 ]; then
         has_error=1
